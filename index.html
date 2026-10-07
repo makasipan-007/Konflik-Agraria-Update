@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi Konflik Agraria di Indonesia (2015–2025)</title>
+    <!-- Memuat Google Fonts (Courier Prime) -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Chart.js untuk Grafik Interaktif -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plugin Chart.js DataLabels untuk menampilkan angka langsung di grafik -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: #121c17; 
+            font-family: 'Courier Prime', monospace; 
+            color: #f3f4f6; 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-size: 15px;
+        }
+
+        /* Container Utama */
+        .main-container {
+            max-width: 1150px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 16px 10px;
+            flex: 1;
+        }
+
+        /* Wadah Utama Dashboard */
+        .dashboard-card {
+            background: #172620;
+            border: 1px solid #23382e;
+            padding: 16px 12px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .header-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8fafc;
+            font-family: 'Courier Prime', monospace;
+            letter-spacing: 0.3px;
+        }
+
+        .section-subtitle {
+            font-size: 12.5px;
+            font-style: italic;
+            color: #94a3b8;
+        }
+
+        .section-source {
+            font-size: 13px;
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        /* Tombol Filter Grafik - Bisa digeser horizontal di HP */
+        .filter-container {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 6px;
+            margin-top: 2px;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .filter-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .chart-btn {
+            background: #121c17;
+            color: #94a3b8;
+            border: 1px solid #23382e;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+            font-family: 'Courier Prime', monospace;
+            flex-shrink: 0;
+        }
+        .chart-btn:hover { background: #1d332a; color: #ffffff; border-color: #334e42; }
+        .chart-btn.active { background: #fde047; color: #121c17; border-color: #fde047; font-weight: 700; }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        /* Garis Pemisah Tipis */
+        .divider {
+            height: 1px;
+            background-color: #23382e;
+            width: 100%;
+        }
+
+        /* Grid Kartu Akumulasi Data 2x4 */
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .grid-card {
+            background: #121c17;
+            border: 1px solid #23382e;
+            border-left: 3px solid #fde047;
+            padding: 10px 12px;
+            border-radius: 6px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .grid-card:hover {
+            transform: translateY(-2px);
+            border-color: #fde047;
+        }
+        .grid-card .val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fde047;
+            display: block;
+            margin-bottom: 2px;
+            font-family: 'Courier Prime', monospace;
+        }
+        .grid-card .lbl {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            display: block;
+        }
+
+        /* Footer Byline */
+        .page-footer {
+            max-width: 1150px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 10px;
+            text-align: left;
+            font-size: 11px;
+            font-style: italic;
+            color: #94a3b8;
+            border-top: 1px solid #23382e;
+            margin-top: 12px;
+            font-family: 'Courier Prime', monospace;
+        }
+        .page-footer span {
+            color: #fde047;
+            font-weight: 700;
+            font-style: italic;
+            font-size: 11px;
+        }
+
+        /* Responsif untuk Tablet & Handphone */
+        @media (max-width: 1024px) {
+            .grid-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .main-container {
+                padding: 4px;
+            }
+            .dashboard-card {
+                padding: 10px 8px;
+                gap: 10px;
+            }
+            .section-title {
+                font-size: 17px;
+            }
+            .chart-wrapper {
+                height: 280px;
+            }
+            .grid-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+            .grid-card {
+                padding: 8px 10px;
+            }
+            .grid-card .val {
+                font-size: 16px;
+            }
+            .grid-card .lbl {
+                font-size: 10px;
+            }
+            .chart-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- Satu Kotak Utama yang Menyatukan Grafik dan Statistik -->
+        <div class="dashboard-card">
+            
+            <div class="header-group">
+                <h2 class="section-title">Konflik Agraria Dalam Periode 2015-2025</h2>
+                <span class="section-source">Dihimpun dari data Konsorsium Pembaruan Agraria (KPA)</span>
+                <span class="section-subtitle"><em>Jumlah rincian per tahun ditampilkan langsung di atas grafik</em></span>
+            </div>
+            
+            <!-- Tombol Filter Grafik (Posisi Konflik & Luas Area dan Kriminalisasi & Kekerasan ditukar) -->
+            <div class="filter-container">
+                <button onclick="updateChart('kekerasan')" class="chart-btn active" id="btn-kekerasan">Kriminalisasi & Kekerasan</button>
+                <button onclick="updateChart('korban')" class="chart-btn" id="btn-korban">Korban Terdampak (KK)</button>
+                <button onclick="updateChart('kombinasi')" class="chart-btn" id="btn-kombinasi">Konflik & Luas Area</button>
+                <button onclick="updateChart('korporasi')" class="chart-btn" id="btn-korporasi">Korporasi Terlibat</button>
+                <button onclick="updateChart('sektor')" class="chart-btn" id="btn-sektor">Sektor Pemicu</button>
+            </div>
+
+            <!-- Canvas Grafik -->
+            <div class="chart-wrapper">
+                <canvas id="myChart"></canvas>
+            </div>
+
+            <!-- Garis Pemisah Halus -->
+            <div class="divider"></div>
+
+            <!-- Kartu Grid Akumulasi Data di Bagian Bawah -->
+            <div class="grid-stats">
+                <div class="grid-card" style="border-left-color: #ef4444;">
+                    <span class="val" style="color: #ef4444;" data-target="3575" data-format="number">3.575</span>
+                    <span class="lbl">Total Konflik</span>
+                </div>
+                <div class="grid-card" style="border-left-color: #f59e0b;">
+                    <span class="val" style="color: #f59e0b;" data-target="8.33" data-format="decimal">8,33+ Juta Ha</span>
+                    <span class="lbl">Total Luas Wilayah</span>
+                </div>
+                <div class="grid-card" style="border-left-color: #3b82f6;">
+                    <span class="val" style="color: #3b82f6;" data-target="1950356" data-format="number">1.950.356</span>
+                    <span class="lbl">Keluarga Terdampak (KK)</span>
+                </div>
+                <div class="grid-card" style="border-left-color: #8b5cf6;">
+                    <span class="val" style="color: #8b5cf6;" data-target="3245" data-format="number">3.245</span>
+                    <span class="lbl">Korban Kriminalisasi</span>
+                </div>
+                <div class="grid-card" style="border-left-color: #db2777;">
+                    <span class="val" style="color: #db2777;" data-target="1366" data-format="number">1.366</span>
+                    <span class="lbl">Korban Penganiayaan</span>
+                </div>
+                <div class="grid-card" style="border-left-color: #f97316;">
+                    <span class="val" style="color: #f97316;" data-target="107" data-format="number">107</span>
+                    <span class="lbl">Korban Tertembak</span>
+                </div>
+                <div class="grid-card" style="border-left-color: #dc2626;">
+                    <span class="val" style="color: #dc2626;" data-target="80" data-format="jiwa">80 Jiwa</span>
+                    <span class="lbl">Korban Meninggal Dunia</span>
+                </div>
+                <div class="grid-card" style="border-left-color: #10b981;">
+                    <span class="val" style="color: #10b981;" data-target="1960" data-format="number">1.960</span>
+                    <span class="lbl">Korporasi Terlibat</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer Byline -->
+    <footer class="page-footer">
+        <em><span>Irfan Maulana</span> / <span>Mongabay Indonesia</span></em>
+    </footer>
+
+    <script>
+        // Data dari KPA (2015-2025)
+        const rawData = [
+            { tahun: 2015, konflik: 252, luas: 400744, korban: 108714, kriminalisasi: 278, kekerasan: 102, meninggal: 5, korporasi: 127 },
+            { tahun: 2016, konflik: 450, luas: 1265027, korban: 86745, kriminalisasi: 222, kekerasan: 63, meninggal: 13, korporasi: 167 },
+            { tahun: 2017, konflik: 659, luas: 520492, korban: 652738, kriminalisasi: 369, kekerasan: 224, meninggal: 13, korporasi: 208 },
+            { tahun: 2018, konflik: 410, luas: 807177, korban: 176487, kriminalisasi: 139, kekerasan: 88, meninggal: 10, korporasi: 235 },
+            { tahun: 2019, konflik: 279, luas: 734225, korban: 109042, kriminalisasi: 258, kekerasan: 211, meninggal: 14, korporasi: 182 },
+            { tahun: 2020, konflik: 241, luas: 624272, korban: 135332, kriminalisasi: 134, kekerasan: 19, meninggal: 11, korporasi: 153 },
+            { tahun: 2021, konflik: 207, luas: 500562, korban: 198895, kriminalisasi: 150, kekerasan: 19, meninggal: 3, korporasi: 128 },
+            { tahun: 2022, konflik: 212, luas: 1033713, korban: 346402, kriminalisasi: 219, kekerasan: 73, meninggal: 3, korporasi: 135 },
+            { tahun: 2023, konflik: 241, luas: 638188, korban: 135608, kriminalisasi: 608, kekerasan: 115, meninggal: 3, korporasi: 162 },
+            { tahun: 2024, konflik: 296, luas: 635885, korban: 114921, kriminalisasi: 464, kekerasan: 120, meninggal: 4, korporasi: 195 },
+            { tahun: 2025, konflik: 341, luas: 914575, korban: 123612, kriminalisasi: 404, kekerasan: 312, meninggal: 1, korporasi: 268 }
+        ];
+
+        // Setup Chart.js (Default awal Kriminalisasi & Kekerasan)
+        const labels = rawData.map(d => d.tahun);
+        const ctx = document.getElementById('myChart').getContext('2d');
+        
+        let myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Kriminalisasi (Orang)',
+                        data: rawData.map(d => d.kriminalisasi),
+                        borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.15)', borderWidth: 2.5, fill: true, tension: 0.35, pointBackgroundColor: '#8b5cf6', pointRadius: 4,
+                        yAxisID: 'yKonflik'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Kekerasan / Penganiayaan (Orang)',
+                        data: rawData.map(d => d.kekerasan),
+                        borderColor: '#db2777', backgroundColor: 'rgba(219, 39, 119, 0.15)', borderWidth: 2.5, fill: true, tension: 0.35, pointBackgroundColor: '#db2777', pointRadius: 4,
+                        yAxisID: 'yKonflik'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Meninggal Dunia / Tewas (Jiwa)',
+                        data: rawData.map(d => d.meninggal),
+                        borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', borderWidth: 2.5, fill: true, tension: 0.35, pointBackgroundColor: '#ef4444', pointRadius: 4,
+                        yAxisID: 'yKonflik'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#cbd5e1', font: { family: 'Courier Prime', size: 11 } } },
+                    datalabels: {
+                        color: function(context) {
+                            if (context.chart.config.type === 'doughnut') return '#ffffff';
+                            return '#f8fafc';
+                        },
+                        backgroundColor: null,
+                        borderWidth: 0,
+                        font: {
+                            family: 'Courier Prime',
+                            size: 9.5,
+                            weight: 'bold'
+                        },
+                        formatter: function(value, context) {
+                            if (context.chart.config.type === 'doughnut') {
+                                return value + '%';
+                            }
+                            if (value >= 1000) {
+                                return value.toLocaleString('id-ID');
+                            }
+                            return value;
+                        },
+                        anchor: function(context) {
+                            if (context.chart.config.type === 'bar') {
+                                if (context.datasetIndex === 0) return 'end';   
+                                if (context.datasetIndex === 1) return 'end';   
+                            }
+                            return 'center';
+                        },
+                        align: function(context) {
+                            if (context.chart.config.type === 'bar') {
+                                if (context.datasetIndex === 0) return 'top';    
+                                if (context.datasetIndex === 1) return 'top';    
+                            }
+                            if (context.chart.config.type === 'doughnut') return 'center';
+                            return 'top';
+                        },
+                        offset: function(context) {
+                            if (context.chart.config.type === 'bar') {
+                                if (context.datasetIndex === 0) return 2;  
+                                if (context.datasetIndex === 1) return 12; 
+                            }
+                            return 4;
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                if (myChart.config.type === 'doughnut') {
+                                    return context[0].label;
+                                }
+                                return 'Tahun ' + context[0].label;
+                            },
+                            label: function(context) {
+                                if (myChart.config.type === 'doughnut') {
+                                    return ''; 
+                                }
+                                return context.dataset.label + ': ' + (context.parsed.y >= 1000 ? context.parsed.y.toLocaleString('id-ID') : context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    yKonflik: {
+                        type: 'linear',
+                        position: 'left',
+                        beginAtZero: true,
+                        grid: { color: '#23382e' },
+                        ticks: { color: '#94a3b8', font: { family: 'Courier Prime', size: 10 } },
+                        title: { display: true, text: 'Jumlah Orang', color: '#8b5cf6', font: { family: 'Courier Prime', size: 10 } }
+                    },
+                    yLuas: {
+                        display: false,
+                        type: 'linear',
+                        position: 'right',
+                        beginAtZero: true
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { family: 'Courier Prime', size: 10 } }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        // Fungsi Tombol Interaktif
+        function updateChart(type) {
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            myChart.options.scales.yKonflik.display = false;
+            myChart.options.scales.yLuas.display = false;
+            myChart.options.scales.x.display = true;
+
+            if (type === 'kombinasi') {
+                myChart.config.type = 'bar';
+                myChart.options.scales.yKonflik.display = true;
+                myChart.options.scales.yLuas.display = true;
+                myChart.options.scales.yKonflik.title.text = 'Jumlah Konflik';
+                myChart.options.scales.yKonflik.title.color = '#fde047';
+                myChart.data.labels = labels;
+                myChart.data.datasets = [
+                    {
+                        type: 'bar',
+                        label: 'Luas Area (Hektar)',
+                        data: rawData.map(d => d.luas),
+                        backgroundColor: 'rgba(245, 158, 11, 0.4)',
+                        borderColor: '#f59e0b',
+                        borderWidth: 1.5,
+                        yAxisID: 'yLuas',
+                        borderRadius: 4
+                    },
+                    {
+                        type: 'line',
+                        label: 'Jumlah Letusan Konflik',
+                        data: rawData.map(d => d.konflik),
+                        borderColor: '#fde047',
+                        backgroundColor: 'rgba(253, 224, 71, 0.1)',
+                        borderWidth: 2.5,
+                        fill: false,
+                        tension: 0.35,
+                        pointBackgroundColor: '#fde047',
+                        pointRadius: 4,
+                        yAxisID: 'yKonflik'
+                    }
+                ];
+            } else if (type === 'korban') {
+                myChart.config.type = 'line';
+                myChart.options.scales.yKonflik.display = true;
+                myChart.options.scales.yKonflik.title.text = 'Jumlah Korban (KK)';
+                myChart.options.scales.yKonflik.title.color = '#3b82f6';
+                myChart.data.labels = labels;
+                myChart.data.datasets = [{
+                    type: 'line',
+                    label: 'Jumlah Korban Terdampak (KK)',
+                    data: rawData.map(d => d.korban),
+                    borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.08)', borderWidth: 2.5, fill: true, tension: 0.35, pointBackgroundColor: '#3b82f6', pointRadius: 4,
+                    yAxisID: 'yKonflik'
+                }];
+            } else if (type === 'kekerasan') {
+                myChart.config.type = 'line';
+                myChart.options.scales.yKonflik.display = true;
+                myChart.options.scales.yKonflik.title.text = 'Jumlah Orang';
+                myChart.options.scales.yKonflik.title.color = '#8b5cf6';
+                myChart.data.labels = labels;
+                myChart.data.datasets = [
+                    {
+                        type: 'line',
+                        label: 'Kriminalisasi (Orang)',
+                        data: rawData.map(d => d.kriminalisasi),
+                        borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.15)', borderWidth: 2.5, fill: true, tension: 0.35, pointBackgroundColor: '#8b5cf6', pointRadius: 4,
+                        yAxisID: 'yKonflik'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Kekerasan / Penganiayaan (Orang)',
+                        data: rawData.map(d => d.kekerasan),
+                        borderColor: '#db2777', backgroundColor: 'rgba(219, 39, 119, 0.15)', borderWidth: 2.5, fill: true, tension: 0.35, pointBackgroundColor: '#db2777', pointRadius: 4,
+                        yAxisID: 'yKonflik'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Meninggal Dunia / Tewas (Jiwa)',
+                        data: rawData.map(d => d.meninggal),
+                        borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', borderWidth: 2.5, fill: true, tension: 0.35, pointBackgroundColor: '#ef4444', pointRadius: 4,
+                        yAxisID: 'yKonflik'
+                    }
+                ];
+            } else if (type === 'korporasi') {
+                myChart.config.type = 'line';
+                myChart.options.scales.yKonflik.display = true;
+                myChart.options.scales.yKonflik.title.text = 'Jumlah Korporasi';
+                myChart.options.scales.yKonflik.title.color = '#10b981';
+                myChart.data.labels = labels;
+                myChart.data.datasets = [{
+                    type: 'line',
+                    label: 'Jumlah Korporasi Terlibat (Swasta & BUMN)',
+                    data: rawData.map(d => d.korporasi),
+                    borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 2.5, fill: true, tension: 0.35, pointBackgroundColor: '#10b981', pointRadius: 4,
+                    yAxisID: 'yKonflik'
+                }];
+            } else if (type === 'sektor') {
+                myChart.config.type = 'doughnut';
+                myChart.options.scales.x.display = false;
+                myChart.data.labels = ['Perkebunan & Agribisnis', 'Infrastruktur & PSN', 'Pertambangan', 'Kehutanan', 'Properti', 'Pesisir'];
+                myChart.data.datasets = [{
+                    label: 'Proporsi Sektor Pemicu (%)',
+                    data: [38, 24, 13, 10, 9, 6],
+                    backgroundColor: ['#10b981', '#06b6d4', '#f59e0b', '#a855f7', '#ef4444', '#64748b'],
+                    borderWidth: 2,
+                    borderColor: '#172620'
+                }];
+            }
+            myChart.update();
+        }
+    </script>
+</body>
+</html>
